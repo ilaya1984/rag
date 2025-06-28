@@ -1,0 +1,7 @@
+flask
+faiss-cpu
+langchain
+sentence-transformers
+huggingface-hub
+numpy
+PyPDF2
