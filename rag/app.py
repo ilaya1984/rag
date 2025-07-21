@@ -1,48 +1,147 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, session, redirect, url_for, render_template, jsonify
 import os
-from rag_utils import ingest_and_embed, ask_question
+from rag_utils import ingest_and_embed, ask_question,extract_suggested_questions_from_answer
+from werkzeug.utils import secure_filename
+import json
 
 
 app = Flask(__name__)
+app.secret_key = "your_secret_key"
 UPLOAD_FOLDER = "uploaded_docs"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-HTML = """
-<!doctype html>
-<title>RAG with Phi-2</title>
-<h2>Upload PDF</h2>
-<form method=post enctype=multipart/form-data action="/upload">
-  <input type=file name=file><input type=submit value=Upload>
-</form>
-<hr>
-<h2>Ask a question</h2>
-<form method=post action="/ask">
-  <input type=text name=query style="width:300px;">
-  <input type=submit value=Ask>
-</form>
-{% if response %}
-  <h3>Response:</h3>
-  <p>{{ response }}</p>
-{% endif %}
-"""
-
-@app.route("/", methods=["GET"])
+@app.route("/")
 def index():
-    return render_template_string(HTML)
+    session.setdefault("chat_history", [])
+    session.setdefault("active_agent", None)
+
+    agents = []
+    agent_images = {}
+    suggestions_dict = {}
+
+    for filename in os.listdir("agents"):
+        if filename.endswith(".json"):
+            with open(os.path.join("agents", filename), "r", encoding="utf-8") as f:
+                agent_data = json.load(f)
+                agents.append(agent_data["id"])
+                agent_images[agent_data["id"]] = agent_data.get("image", "default_agent.png")
+                suggestions_dict[agent_data["id"]] = agent_data.get("suggested_questions", [])
+
+    active_agent = session.get("active_agent")
+    suggestions = suggestions_dict.get(active_agent, [])
+
+    return render_template(
+        "chat.html",
+        chat_history=session["chat_history"],
+        agents=agents,
+        agent_images=agent_images,
+        active_agent=active_agent,
+        suggestions=suggestions
+    )
+
+@app.route("/switch", methods=["POST"])
+def switch_agent():
+    agent = request.form.get("agent")
+    if agent and agent in session.get("agents", []):
+        session["active_agent"] = agent
+        session["chat_history"] = []  # Clear chat when switching
+    return redirect(url_for("index"))
+@app.route("/create_agent", methods=["POST"])
+def create_agent():
+    from werkzeug.utils import secure_filename
+
+    agent_name = request.form.get("agent_name")
+    pdf = request.files.get("file")
+    img = request.files.get("agent_image")
+
+    if not agent_name or not pdf:
+        return "Agent name and PDF are required", 400
+
+    agent_id = secure_filename(agent_name)  # Normalize filename/ID
+
+    # Save PDF
+    pdf_path = os.path.join(UPLOAD_FOLDER, f"{agent_id}.pdf")
+    pdf.save(pdf_path)
+
+    # Save agent image (optional)
+    if img and img.filename:
+        ext = os.path.splitext(img.filename)[-1]
+        image_filename = f"{agent_id}{ext}"
+        img.save(os.path.join("static", image_filename))
+    else:
+        image_filename = "default_agent.png"
+
+    # Embed + generate suggestions
+    ingest_and_embed(agent_id, pdf_path)  # This already generates suggestions into session
+
+    # Get suggestions from session
+    suggestions = session.get("suggestions", {}).get(agent_id, [])
+
+    # Save agent metadata to JSON
+    agent_metadata = {
+        "id": agent_id,
+        "name": agent_name,
+        "pdf_path": pdf_path,
+        "image": image_filename,
+        "suggested_questions": suggestions
+    }
+
+    with open(os.path.join("agents", f"{agent_id}.json"), "w", encoding="utf-8") as f:
+        json.dump(agent_metadata, f, indent=2)
+
+    # Set active agent in session
+    session["active_agent"] = agent_id
+    session["chat_history"] = []
+
+    return "OK"
+
 
 @app.route("/upload", methods=["POST"])
 def upload():
     f = request.files["file"]
     path = os.path.join(UPLOAD_FOLDER, f.filename)
     f.save(path)
-    ingest_and_embed(path)
-    return "PDF uploaded and embedded! 000000000000000000000000000000000"
+
+    agent_name = f.filename
+    ingest_and_embed(agent_name, path)
+
+    session.setdefault("agents", [])
+    if agent_name not in session["agents"]:
+        session["agents"].append(agent_name)
+    session["active_agent"] = agent_name
+    session["chat_history"] = []  # Clear chat for new agent
+
+    return redirect(url_for("index"))
 
 @app.route("/ask", methods=["POST"])
 def ask():
-    query = request.form["query"]
-    answer = ask_question(query)
-    return answer
+    if request.is_json:
+        data = request.get_json()
+        query = data.get("query", "")
+    else:
+        query = request.form.get("query", "")
+
+    active_agent = session.get("active_agent")
+    if not active_agent:
+        return jsonify({"answer": "<span style='color:red;'>No agent selected</span>"})
+
+    result = ask_question(active_agent, query)
+    if isinstance(result, dict) and "error" in result:
+        answer = f"<span style='color:red;'><b>Error:</b> {result['error']}</span>"
+    else:
+        answer = result
+        suggestions = extract_suggested_questions_from_answer(answer)
+    
+    session.setdefault("chat_history", [])
+    session["chat_history"].append({"question": query, "answer": answer})
+    session.modified = True
+
+    return jsonify({
+        "answer": answer,
+        "suggestions": suggestions
+    })
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
