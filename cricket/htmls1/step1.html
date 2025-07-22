@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 1 - Match Info</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, select { width: 100%; margin-bottom: 12px; padding: 8px; }
+    button { padding: 10px; width: 100%; background: #007BFF; color: #fff; border: none; border-radius: 4px; }
+    label { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Step 1 - Match Information</h2>
+    <label>Team 1 Name</label>
+    <input type="text" id="team1" placeholder="Team 1 Name" />
+
+    <label>Team 2 Name</label>
+    <input type="text" id="team2" placeholder="Team 2 Name" />
+
+    <label>Match Type</label>
+    <select id="matchType">
+      <option value="T20">T20</option>
+      <option value="ODI">ODI</option>
+      <option value="Test">Test</option>
+    </select>
+
+    <label>Total Overs</label>
+    <input type="number" id="totalOvers" placeholder="e.g., 20" oninput="calculateOversPerPlayer()" />
+
+    <label>Overs Per Player</label>
+    <input type="number" id="oversPerPlayer" readonly />
+
+    <label>City</label>
+    <input type="text" id="city" placeholder="City name" />
+
+    <label>Ground</label>
+    <input type="text" id="ground" placeholder="Ground name" />
+
+    <label>Date & Time</label>
+    <input type="datetime-local" id="dateTime" />
+
+    <label>Ball Type</label>
+    <select id="ballType">
+      <option value="leather">Leather</option>
+      <option value="tennis">Tennis</option>
+      <option value="rubber">Rubber</option>
+    </select>
+
+    <label>Pitch Type</label>
+    <select id="pitchType">
+      <option value="grass">Grass</option>
+      <option value="mat">Mat</option>
+      <option value="cement">Cement</option>
+      <option value="turf">Turf</option>
+    </select>
+
+    <button onclick="saveMatchInfo()">Next</button>
+  </div>
+
+  <script>
+    function getTable(name) {
+      return JSON.parse(localStorage.getItem(name)) || [];
+    }
+
+    function setTable(name, data) {
+      localStorage.setItem(name, JSON.stringify(data));
+    }
+
+    function getNextId(name) {
+      const table = getTable(name);
+      return table.length ? Math.max(...table.map(x => x.id || 0)) + 1 : 1;
+    }
+
+    function calculateOversPerPlayer() {
+      const total = parseInt(document.getElementById("totalOvers").value);
+      if (!isNaN(total)) {
+        document.getElementById("oversPerPlayer").value = Math.ceil(total / 5);
+      } else {
+        document.getElementById("oversPerPlayer").value = "";
+      }
+    }
+
+    function saveMatchInfo() {
+      const team1 = document.getElementById("team1").value.trim();
+      const team2 = document.getElementById("team2").value.trim();
+      const matchType = document.getElementById("matchType").value;
+      const totalOvers = parseInt(document.getElementById("totalOvers").value);
+      const oversPerPlayer = parseInt(document.getElementById("oversPerPlayer").value);
+      const city = document.getElementById("city").value.trim();
+      const ground = document.getElementById("ground").value.trim();
+      const dateTime = document.getElementById("dateTime").value;
+      const ballType = document.getElementById("ballType").value;
+      const pitchType = document.getElementById("pitchType").value;
+
+      if (!team1 || !team2 || isNaN(totalOvers) || !city || !ground || !dateTime) {
+        alert("Please fill all required fields.");
+        return;
+      }
+
+      const teams = getTable("teams");
+      const team1Id = getNextId("teams");
+      const team2Id = team1Id + 1;
+      teams.push({ id: team1Id, name: team1 });
+      teams.push({ id: team2Id, name: team2 });
+      setTable("teams", teams);
+
+      const matches = getTable("matches");
+      const matchId = getNextId("matches");
+      const match = {
+        id: matchId,
+        team1_id: team1Id,
+        team2_id: team2Id,
+        match_type: matchType,
+        total_overs: totalOvers,
+        overs_per_player: oversPerPlayer,
+        city,
+        ground,
+        date_time: dateTime,
+        ball_type: ballType,
+        pitch_type: pitchType,
+        toss_winner_id: null,
+        toss_decision: null,
+        batting_team_id: null,
+        bowling_team_id: null,
+        score: 0,
+        wickets: 0,
+        current_over: 0,
+        current_ball: 0,
+        inning: 1
+      };
+      matches.push(match);
+      setTable("matches", matches);
+      localStorage.setItem("currentMatchId", matchId);
+      window.location.href = "step2.html";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 4 - Opening Pair & Bowler</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 25px;
+    }
+    button:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Step 4 - Opening Pair & Bowler</h2>
+
+    <label for="striker">Striker (Batting Team)</label>
+    <select id="striker"></select>
+
+    <label for="nonStriker">Non-Striker (Batting Team)</label>
+    <select id="nonStriker"></select>
+
+    <label for="bowler">Opening Bowler (Bowling Team)</label>
+    <select id="bowler"></select>
+
+    <button onclick="saveSelections()">Start Match</button>
+  </div>
+
+<script>
+  function getTable(name) {
+    return JSON.parse(localStorage.getItem(name)) || [];
+  }
+  function setTable(name, data) {
+    localStorage.setItem(name, JSON.stringify(data));
+  }
+
+  const matchId = parseInt(localStorage.getItem("currentMatchId"));
+  const matches = getTable("matches");
+  const matchIndex = matches.findIndex(m => m.id === matchId);
+  const match = matches[matchIndex];
+
+  const players = getTable("players");
+  const battingPlayers = players.filter(p => p.team_id === match.batting_team_id && p.match_id === matchId);
+  const bowlingPlayers = players.filter(p => p.team_id === match.bowling_team_id && p.match_id === matchId);
+
+  const strikerSelect = document.getElementById("striker");
+  const nonStrikerSelect = document.getElementById("nonStriker");
+  const bowlerSelect = document.getElementById("bowler");
+
+  function populateOptions(selectElement, players, excludeId) {
+    selectElement.innerHTML = '<option value="">Select</option>';
+    players.forEach(player => {
+      if (player.id !== excludeId) {
+        const option = document.createElement("option");
+        option.value = player.id;
+        option.textContent = player.name;
+        selectElement.appendChild(option);
+      }
+    });
+  }
+
+  function setupSelections() {
+    populateOptions(strikerSelect, battingPlayers);
+    populateOptions(nonStrikerSelect, battingPlayers);
+    populateOptions(bowlerSelect, bowlingPlayers);
+  }
+
+  function saveSelections() {
+    const strikerId = parseInt(strikerSelect.value);
+    const nonStrikerId = parseInt(nonStrikerSelect.value);
+    const bowlerId = parseInt(bowlerSelect.value);
+
+    if (!strikerId || !nonStrikerId || !bowlerId) {
+      alert("Please select all three players.");
+      return;
+    }
+
+    if (strikerId === nonStrikerId) {
+      alert("Striker and Non-Striker must be different.");
+      return;
+    }
+
+    match.striker_id = strikerId;
+    match.non_striker_id = nonStrikerId;
+    match.current_bowler_id = bowlerId;
+    match.current_over = 0;
+    match.current_ball = 0;
+    match.score = 0;
+    match.wickets = 0;
+
+    matches[matchIndex] = match;
+    setTable("matches", matches);
+
+    window.location.href = "step5.html";
+  }
+
+  setupSelections();
+</script>
+</body>
+</html>

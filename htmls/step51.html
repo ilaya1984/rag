@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Cricket Scoring</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f4f4; }
+    .topbar {
+      background: #212121; color: #fff; padding: 10px 20px; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .live-badge { background: red; color: white; padding: 2px 6px; font-size: 12px; border-radius: 4px; margin-right: 10px; }
+    .section { background: white; margin: 20px auto; padding: 20px; max-width: 1000px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .teamscore { font-size: 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 14px; }
+    th { background: #f0f0f0; }
+    .highlight { font-weight: bold; color: green; }
+    .balls { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+    .ball { padding: 5px 8px; background: #ddd; border-radius: 4px; min-width: 28px; text-align: center; }
+    .ball.w { background: crimson; color: white; }
+    .ball.r4 { background: orange; color: white; }
+    .ball.r6 { background: green; color: white; }
+    .ball.extra { background: #007bff; color: white; }
+    .control-panel { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .control-panel select, .control-panel button, .control-panel input { padding: 10px; font-size: 14px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div><span class="live-badge">LIVE</span> <span id="matchTitle">Loading...</span></div>
+    <div id="matchMeta"></div>
+  </div>
+
+  <div class="section">
+    <div class="teamscore">
+      <div id="battingTeamScore"></div>
+      <div id="targetInfo"></div>
+    </div>
+
+    <h4>Batters</h4>
+    <table id="battersTable"><thead><tr><th>Name</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr></thead><tbody></tbody></table>
+
+    <h4>Bowler</h4>
+    <table id="bowlerTable"><thead><tr><th>Name</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr></thead><tbody></tbody></table>
+
+    <h4>Last 6 Balls</h4>
+    <div class="balls" id="lastBalls"></div>
+
+    <div class="control-panel">
+      <select id="runInput">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option>
+      </select>
+      <select id="extraInput" onchange="toggleExtraFields()">
+        <option value="">None</option><option value="wide">Wide</option><option value="no-ball">No Ball</option>
+      </select>
+      <select id="extraRunInput" class="hidden">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option>
+      </select>
+      <label id="batHitLabel" class="hidden"><input type="checkbox" id="batHitCheckbox" /> Bat Hit</label>
+      <button onclick="recordBall()">Add Ball</button>
+      <button onclick="changeBowler()">Change Bowler</button>
+    </div>
+  </div>
+
+<script>
+
+const teams={"team1":{"id":3,"name":"IND"} ,"team2":{"id":4,"name":"PAK"}}
+
+const allPlayers = [
+  { "id": 1, "name": "IND Player 1", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 2, "name": "IND Player 2", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 3, "name": "IND Player 3", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 4, "name": "IND Player 4", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 5, "name": "IND Player 5", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 6, "name": "IND Player 6", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 7, "name": "IND Player 9", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 8, "name": "IND Player 10", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 9, "name": "IND Player 11", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 10, "name": "IND Player 12", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 11, "name": "IND Player 13", "team_id": 3 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 12, "name": "PAK Player 1", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 13, "name": "PAK Player 2", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 14, "name": "PAK Player 3", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 15, "name": "PAK Player 4", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 16, "name": "PAK Player 5", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 17, "name": "PAK Player 6", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 18, "name": "PAK Player 7", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 19, "name": "PAK Player 8", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 20, "name": "PAK Player 9", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 21, "name": "PAK Player 12", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0},
+  { "id": 22, "name": "PAK Player 13", "team_id": 4 ,"match_id": 2,runs: 0, balls: 0, fours: 0, sixes: 0}
+];
+
+
+const matchData = {
+    "match_id":"2",
+    "team1": "3",
+    "team2": "4",
+    "matchType": "Limited Overs",
+    "totalOvers": 10,
+    "oversPerPlayer": 2,
+    "city": "madu",
+    "ground": "valar",
+    "dateTime": "2025-07-04T08:35",
+    "ballType": "Leather",
+    "pitchType": "Matting",
+    "toss": {
+        "winner": "3",
+        "decision": "bat"
+    },
+    "battingTeam": "3",
+    "bowlingTeam": "4",
+    "openingPair": {
+        "striker": 4,
+        "nonStriker": 5
+    },
+    "currentBowler": 3,
+    "currentOver": 0,
+    "currentBall": 1,
+    "score": 11,
+    "wickets": 0,
+    "overs": [],    
+    
+    "players": {
+        "IND Player 1": {
+            "runs": 0,
+            "balls": 16,
+            "fours": 0,
+            "sixes": 0
+        }
+    },
+    "bowlers": {
+        "PAK Player 3": {
+            "balls": 16,
+            "runs": 11,
+            "wickets": 0
+        }
+    }
+}
+
+
+// Step 2: Build player ID → name map
+const playerIdToName = Object.fromEntries(allPlayers.map(p => [p.id, p.name]));
+
+// Step 3: Utility to get players per team
+function getPlayersByTeamId(teamId) {
+  return allPlayers.filter(p => p.team_id === teamId);
+}
+
+// Step 4: After loading matchData (dynamic)
+const team1Id = matchData.team1_id || 3;
+const team2Id = matchData.team2_id || 4;
+
+const team1Players = getPlayersByTeamId(team1Id);
+const team2Players = getPlayersByTeamId(team2Id);
+
+
+
+// let matchData = JSON.parse(localStorage.getItem("matchData")) || {};
+console.log(matchData)
+function updateLocalStorage() {
+  localStorage.setItem("matchData", JSON.stringify(matchData));
+}
+
+function toggleExtraFields() {
+  const extra = document.getElementById("extraInput").value;
+  document.getElementById("extraRunInput").classList.toggle("hidden", extra === "");
+  document.getElementById("batHitLabel").classList.toggle("hidden", extra !== "no-ball");
+}
+
+function updateUI() {
+  const overs = `${Math.floor(matchData.currentBall / 6)}.${matchData.currentBall % 6}`;
+  document.getElementById("matchTitle").innerText = `${matchData.team1} vs ${matchData.team2}`;
+  document.getElementById("matchMeta").innerText = `${matchData.totalOvers} Overs • ${matchData.ballType} • ${matchData.city}`;
+  document.getElementById("battingTeamScore").innerText = `${matchData.battingTeam} ${matchData.score}/${matchData.wickets} (${overs})`;
+  document.getElementById("targetInfo").innerText = `Target 130 • Need ${130 - matchData.score} from ${180 - matchData.currentBall} balls`;
+
+  const striker = matchData.openingPair.striker;
+  const nonStriker = matchData.openingPair.nonStriker;
+  const batterRows = [striker, nonStriker].map(name => {
+    const b = matchData.players?.[name] || { runs: 0, balls: 0, fours: 0, sixes: 0 };
+    const sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0";
+    return `<tr><td class="highlight">${name}</td><td>${b.runs}</td><td>${b.balls}</td><td>${b.fours}</td><td>${b.sixes}</td><td>${sr}</td></tr>`;
+  }).join('');
+  document.querySelector("#battersTable tbody").innerHTML = batterRows;
+
+  const bowler = matchData.currentBowler;
+  const bStat = matchData.bowlers?.[bowler] || { balls: 0, runs: 0, wickets: 0 };
+  const oversBowled = `${Math.floor(bStat.balls / 6)}.${bStat.balls % 6}`;
+  const econ = bStat.balls ? (bStat.runs / (bStat.balls / 6)).toFixed(2) : "0.00";
+  document.querySelector("#bowlerTable tbody").innerHTML = `<tr><td>${bowler}</td><td>${oversBowled}</td><td>${bStat.runs}</td><td>${bStat.wickets}</td><td>${econ}</td></tr>`;
+
+  const lastBalls = matchData.balls.slice(-6).reverse();
+  document.getElementById("lastBalls").innerHTML = lastBalls.map(b => {
+    let cls = "ball";
+    if (b.includes("W")) cls += " w";
+    else if (b.includes("4")) cls += " r4";
+    else if (b.includes("6")) cls += " r6";
+    else if (b.startsWith("WD") || b.startsWith("NB")) cls += " extra";
+    return `<div class="${cls}">${b}</div>`;
+  }).join('');
+}
+
+function recordBall() {
+  const run = parseInt(document.getElementById("runInput").value);
+  const extra = document.getElementById("extraInput").value;
+  const extraRuns = parseInt(document.getElementById("extraRunInput").value || 0);
+  const batHit = document.getElementById("batHitCheckbox").checked;
+  const striker = matchData.openingPair.striker;
+  const bowler = matchData.currentBowler;
+
+  const ballData = {
+    ball: (matchData.currentBall % 6) + 1,
+    batsman: striker,
+    bowler: bowler,
+    runs: run,
+    extra: extra ? { type: extra, runs: extraRuns, ...(extra === "no-ball" && batHit ? { bat: "yes" } : {}) } : null,
+    wicket: null
+  };
+
+  matchData.balls.push(extra ? (extra === "wide" ? `WD+${extraRuns}` : `NB+${extraRuns}`) : run.toString());
+  matchData.score += run + (extra ? 1 + extraRuns : 0);
+
+  matchData.players = matchData.players || {};
+  if (!matchData.players[striker]) matchData.players[striker] = { runs: 0, balls: 0, fours: 0, sixes: 0 };
+  if (!extra || (extra === "no-ball" && batHit)) {
+    matchData.players[striker].runs += run;
+    matchData.players[striker].balls++;
+    if (run === 4) matchData.players[striker].fours++;
+    if (run === 6) matchData.players[striker].sixes++;
+  }
+
+  matchData.bowlers = matchData.bowlers || {};
+  if (!matchData.bowlers[bowler]) matchData.bowlers[bowler] = { balls: 0, runs: 0, wickets: 0 };
+  matchData.bowlers[bowler].runs += run + (extra ? 1 + extraRuns : 0);
+  if (!extra) {
+    matchData.bowlers[bowler].balls++;
+    matchData.currentBall++;
+  }
+
+  updateLocalStorage();
+  updateUI();
+}
+
+function changeBowler() {
+  const next = prompt("Enter new bowler name:");
+  if (next) {
+    matchData.currentBowler = next;
+    updateLocalStorage();
+    updateUI();
+  }
+}
+
+updateUI();
+
+
+if (typeof run === 'number') {
+        matchData.score += run;
+        striker.runs += run;
+        striker.balls += 1;
+        if (run === 4) {
+          striker.fours += 1;
+          bowler.foursConceded += 1;
+        }
+        if (run === 6) {
+          striker.sixes += 1;
+          bowler.sixesConceded += 1;
+        }
+        bowler.runsGiven += run;
+        bowler.balls += 1;
+        matchData.currentOverBall++;
+        if (run === 0) bowler.dots += 1;
+        matchData.last6Balls.push(run);
+
+        if (run % 2 !== 0) rotateStrike();
+
+        if (matchData.currentOverBall >= 6) {
+          matchData.overs++;
+          if ((matchData.last6Balls.slice(-6).filter(b => typeof b === 'number').reduce((a, b) => a + b, 0)) === 0) {
+            bowler.maidens++;
+          }
+          matchData.currentOverBall = 0;
+          rotateStrike();
+          showBowlerSelection();
+        }
+      } else {
+        matchData.last6Balls.push(run);
+        if (run === 'wd') {
+        matchData.score++;
+        bowler.runsGiven++;
+        bowler.wides++;
+      } else if (run === 'nb') {
+        matchData.score++;
+        bowler.runsGiven++;
+        bowler.noBalls++;
+      }
+      }
+
+      
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Step 3 - Toss</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f2f2f2; margin: 0; padding: 20px; }
+    .container {
+      max-width: 600px;
+      background-color: white;
+      padding: 30px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin: 10px 0 5px; font-weight: bold; }
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Step 3 - Toss</h2>
+
+    <label for="tossWinner">Toss Winner:</label>
+    <select id="tossWinner">
+      <option value="">Select Team</option>
+    </select>
+
+    <label for="tossDecision">Decision:</label>
+    <select id="tossDecision">
+      <option value="">Select Decision</option>
+      <option value="bat">Bat First</option>
+      <option value="bowl">Bowl First</option>
+    </select>
+
+    <button onclick="saveToss()">Next</button>
+  </div>
+
+  <script>
+    const matchData = JSON.parse(localStorage.getItem("matchData"));
+
+    const tossWinnerSelect = document.getElementById("tossWinner");
+    const tossDecisionSelect = document.getElementById("tossDecision");
+
+    function loadTeams() {
+      if (!matchData || !matchData.team1 || !matchData.team2) {
+        alert("Match data is missing. Please start from Step 1.");
+        window.location.href = "step1.html";
+        return;
+      }
+
+      tossWinnerSelect.innerHTML = `
+        <option value="">Select Team</option>
+        <option value="${matchData.team1}">${matchData.team1}</option>
+        <option value="${matchData.team2}">${matchData.team2}</option>
+      `;
+    }
+
+    function saveToss() {
+      const winner = tossWinnerSelect.value;
+      const decision = tossDecisionSelect.value;
+
+      if (!winner || !decision) {
+        alert("Please select toss winner and their decision.");
+        return;
+      }
+
+      matchData.toss = { winner, decision };
+      matchData.battingTeam = decision === "bat" ? winner :
+        (winner === matchData.team1 ? matchData.team2 : matchData.team1);
+      matchData.bowlingTeam = matchData.battingTeam === matchData.team1 ? matchData.team2 : matchData.team1;
+
+      localStorage.setItem("matchData", JSON.stringify(matchData));
+      window.location.href = "step4.html";
+    }
+
+    loadTeams();
+  </script>
+</body>
+</html>

@@ -43,7 +43,7 @@ def extract_suggested_questions_from_answer(answer: str, max_questions: int = 5)
 # Add globally or in function scope
 
 
-def extract_suggested_questions(chunks: list[str], max_questions: int = 10) -> list:
+def extract_suggested_questions(chunks: list[str], max_questions: int = 5) -> list:
     if not chunks:
         return []
 

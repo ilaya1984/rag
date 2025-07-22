@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step 5 - Full Featured Scoring</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f9f9f9; }
+    .topbar { background: #333; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .live-badge { background: red; color: white; padding: 4px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; }
+    .section { max-width: 1000px; margin: auto; padding: 20px; background: white; margin-top: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .teamscore { display: flex; justify-content: space-between; font-size: 18px; margin-bottom: 15px; }
+    .balls { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+    .ball { background: #ccc; padding: 6px 10px; border-radius: 4px; min-width: 28px; text-align: center; }
+    .ball.r4 { background: orange; color: white; }
+    .ball.r6 { background: green; color: white; }
+    .ball.w { background: crimson; color: white; }
+    .ball.extra { background: #007bff; color: white; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
+    th { background: #f2f2f2; }
+    .highlight { color: green; font-weight: bold; }
+    .control-panel { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .control-panel select, .control-panel input, .control-panel button { padding: 10px; font-size: 14px; }
+    .hidden { display: none; }
+    /* Popup Style */
+    #bowlerSelectWrapper {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      border-radius: 10px;
+      z-index: 1000;
+    }
+    .tabs {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  background: #ddd;
+  margin-right: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 5px 5px 0 0;
+}
+.tab-button.active {
+  background: #212121;
+  color: white;
+}
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div><span class="live-badge">LIVE</span> <span id="matchTitle">Loading...</span></div>
+    <div id="matchMeta"></div>
+  </div>
+ <!-- Add inside <body> just after topbar -->
+<div class="tabs">
+  <button class="tab-button active" onclick="showTab('liveTab')">Live</button>
+  <button class="tab-button" onclick="showTab('scorecardTab')">Scorecard</button>
+  <button class="tab-button" onclick="showTab('analyseTab')">Analyse</button>
+</div>
+<div id="liveTab" class="tab-content active">
+  <div class="section">
+    <div class="teamscore">
+      <div id="battingTeamScore"></div>
+      <div id="targetInfo"></div>
+    </div>
+
+    <h4>Batters</h4>
+    <table id="battersTable"><thead><tr><th>Name</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr></thead><tbody></tbody></table>
+
+    <h4>Bowler</h4>
+    <table id="bowlerTable"><thead><tr><th>Name</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr></thead><tbody></tbody></table>
+
+    <h4>Last 6 Balls</h4>
+    <div class="balls" id="lastBalls"></div>
+
+    <div class="control-panel">
+      <select id="runInput">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option>
+      </select>
+      <select id="extraInput" onchange="toggleExtraFields()">
+        <option value="">None</option>
+        <option value="wide">Wide</option>
+        <option value="no-ball">No Ball</option>
+        <option value="bye">Bye</option>
+        <option value="legbye">Leg Bye</option>
+      </select>
+      <select id="extraRunInput" class="hidden">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option>
+      </select>
+      <label id="batHitLabel" class="hidden"><input type="checkbox" id="batHitCheckbox" /> Bat Hit</label>
+      
+      <select id="wicketType">
+        <option value="">No Wicket</option>
+        <option value="bowled">Bowled</option>
+        <option value="caught">Caught</option>
+        <option value="lbw">LBW</option>
+        <option value="run_out">Run Out</option>
+        <option value="stumped">Stumped</option>
+        <option value="hit_wicket">Hit Wicket</option>
+        <option value="retired_hurt">Retired Hurt</option>
+        <option value="obstructing_field">Obstructing the Field</option>
+        <option value="handled_ball">Handled the Ball</option>
+        <option value="hit_ball_twice">Hit the Ball Twice</option>
+        <option value="timed_out">Timed Out</option>
+      </select>
+      <div id="wicketDetails" class="hidden">
+  <select id="newBatsmanSelect"></select>
+
+  <div id="caughtFields" class="hidden">
+    <label>Fielder: <select id="fielder1Select"></select></label>
+    <label><input type="checkbox" id="brilliantCatchCheckbox"> Brilliant Catch</label>
+  </div>
+
+  <div id="runOutFields" class="hidden">
+    <label>Throw by: <select id="fielder2Select"></select></label>
+    <label><input type="checkbox" id="directHitCheckbox"> Direct Hit</label>
+  </div>
+</div>
+<label id="bowlerSelectWrapper" class="hidden">
+  <select id="bowlerSelect"></select>
+  <button onclick="confirmNewBowler()">Set New Bowler</button>
+</label>
+
+      <button onclick="recordBall()">Add Ball</button>
+      <button onclick="changeBowler()">Change Bowler</button>
+      <button onclick="undoLastBall()">Undo Last Ball</button>
+       <button onclick="resetInnings()">Reset Inning</button>
+    </div>
+  </div>
+</div>
+<div id="scorecardTab" class="tab-content">
+  <div class="section">
+    <h3>Full Scorecard</h3>
+    <h4>All Batters</h4>
+    <table id="fullBattersTable"><thead><tr><th>Name</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr></thead><tbody></tbody></table>
+
+    <h4>All Bowlers</h4>
+    <table id="fullBowlerTable"><thead><tr><th>Name</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<div id="analyseTab" class="tab-content">
+  <div class="section">
+    <h3>Analysis</h3>
+    <p>Analysis features coming soon! (Graphical breakdown, partnerships, worm chart, etc.)</p>
+  </div>
+</div>
+ <!-- full implementation of scoring logic coming next in JS -->
+<script>
+function getTable(name) {
+    return JSON.parse(localStorage.getItem(name)) || [];
+  }
+// Core match references
+const matchId = parseInt(localStorage.getItem("currentMatchId"));
+const matches = getTable("matches");
+const matchIndex = matches.findIndex(m => m.id === matchId);
+const match = matches[matchIndex];
+const teams = getTable("teams");
+console.log(teams)
+const players = getTable("players");
+const overs = getTable("overs");
+console.log(overs)
+function updateMatchField(field, value) {
+  match[field] = value;
+  matches[matchIndex] = match;
+  setTable("matches", matches);
+}
+
+function updateUI() {
+  document.getElementById("matchTitle").textContent = `Inning ${match.inning}`;
+  document.getElementById("battingTeamScore").textContent = `${getTeamName(match.batting_team_id)} ${match.score}/${match.wickets}`;
+  document.getElementById("targetInfo").textContent = `Overs: ${match.current_over}.${match.current_ball}`;
+  // Further updates for batter/bowler tables, last balls etc. to follow
+}
+
+function recordBall() {
+  const run = parseInt(document.getElementById("runInput").value);
+  const extra = document.getElementById("extraInput").value;
+  const extraRuns = parseInt(document.getElementById("extraRunInput").value) || 0;
+  const isExtra = extra !== "";
+  const isWicket = document.getElementById("wicketType").value !== "";
+  const overId = getNextId("overs");
+
+  // Determine ball count logic
+  const isLegalDelivery = !isExtra || (extra === "bye" || extra === "leg_bye");
+  if (isLegalDelivery) {
+    match.current_ball++;
+    if (match.current_ball >= 6) {
+      match.current_ball = 0;
+      match.current_over++;
+    }
+  }
+
+  match.score += run + (isExtra ? extraRuns : 0);
+  if (isWicket) match.wickets++;
+  matches[matchIndex] = match;
+  setTable("matches", matches);
+
+  const newBall = {
+    id: overId,
+    match_id: matchId,
+    team1_id: match.batting_team_id,
+    team2_id: match.bowling_team_id,
+    inning: match.inning,
+    over: match.current_over,
+    ball: match.current_ball,
+    striker_id: match.striker_id,
+    non_striker_id: match.non_striker_id,
+    bowler_id: match.current_bowler_id,
+    runs: run,
+    is_extra: isExtra,
+    extra_type: isExtra ? extra : null,
+    is_wicket: isWicket,
+    wicket_type: isWicket ? document.getElementById("wicketType").value : null
+  };
+  overs.push(newBall);
+  setTable("overs", overs);
+
+  updateUI();
+}
+
+function changeBowler() {
+  document.getElementById("bowlerSelectWrapper").classList.remove("hidden");
+  const bowlerSelect = document.getElementById("bowlerSelect");
+  const bowlers = players.filter(p => p.team_id === match.bowling_team_id);
+  bowlerSelect.innerHTML = "";
+  bowlers.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    bowlerSelect.appendChild(opt);
+  });
+}
+
+function confirmNewBowler() {
+  const selectedId = parseInt(document.getElementById("bowlerSelect").value);
+  match.current_bowler_id = selectedId;
+  matches[matchIndex] = match;
+  setTable("matches", matches);
+  document.getElementById("bowlerSelectWrapper").classList.add("hidden");
+  updateUI();
+}
+
+function undoLastBall() {
+  const last = overs.pop();
+  if (!last) return alert("No ball to undo.");
+  match.score -= last.runs;
+  if (last.is_wicket) match.wickets--;
+  if (!last.is_extra || last.extra_type === "bye" || last.extra_type === "leg_bye") {
+    if (match.current_ball === 0) {
+      match.current_over = Math.max(0, match.current_over - 1);
+      match.current_ball = 5;
+    } else {
+      match.current_ball--;
+    }
+  }
+  matches[matchIndex] = match;
+  setTable("matches", matches);
+  setTable("overs", overs);
+  updateUI();
+}
+
+function resetInnings() {
+  match.inning++;
+  match.current_over = 0;
+  match.current_ball = 0;
+  match.score = 0;
+  match.wickets = 0;
+  matches[matchIndex] = match;
+  setTable("matches", matches);
+  updateUI();
+}
+
+function getTeamName(teamId) {
+  const team = getTable("teams").find(t => t.id === teamId);
+  return team ? team.name : "";
+}
+
+
+
+function updateMatchField(field, value) {
+  match[field] = value;
+  matches[matchIndex] = match;
+  setTable("matches", matches);
+}
+
+function getTeamName(teamId) {
+  const team = teams.find(t => t.id === teamId);
+  return team ? team.name : "";
+}
+
+function calculateRR(runs, overs) {
+  if (overs === 0) return 0.0;
+  return (runs / overs).toFixed(2);
+}
+
+function updateUI() {
+  const currentTeam = getTeamName(match.batting_team_id);
+  const opponentTeam = getTeamName(match.bowling_team_id);
+
+  const totalOvers = match.total_overs;
+  const ballsBowled = match.current_over * 6 + match.current_ball;
+  const oversBowled = ballsBowled / 6;
+  const ballsRemaining = (totalOvers * 6) - ballsBowled;
+
+  const firstInningComplete = matches.some(m => m.id !== matchId && m.inning === 1);
+  const target = match.target || 145; // default fallback
+
+  const rr = calculateRR(match.score, oversBowled);
+  const requiredRR = calculateRR(target - match.score, ballsRemaining / 6);
+
+  let status = "";
+  if (match.inning === 1) {
+    status += `Current RR: ${rr} `;
+    status += `Live Projected Score: ${currentTeam.toUpperCase()} ${Math.round(match.score + (rr * (totalOvers - match.current_over)))}\n`;
+  } else {
+    status += `Current RR: ${rr}  Required RR: ${requiredRR}\n`;
+    status += `${opponentTeam} need ${target - match.score} runs in ${ballsRemaining} balls.`;
+  }
+
+  const matchHeader = `1st Match, ${match.city}, ${new Date(match.date_time).toLocaleDateString()}\n${match.ground}`;
+  const tossInfo = `${opponentTeam} chose to ${match.toss_decision}.`;
+
+  console.clear();
+  console.log("Live Score:\n");
+  console.log("Live");
+  console.log(matchHeader);
+  console.log("\n" + currentTeam);
+  console.log(`(${match.current_over}/${totalOvers} ov) ${match.score}/${match.wickets}`);
+  console.log("\n" + opponentTeam);
+  console.log(tossInfo);
+  console.log("Stats view\n");
+  console.log(status);
+
+  // Batters
+  const batterStats = players.filter(p => p.team_id === match.batting_team_id)
+    .map(p => `${p.name} \n R:${p.runs || 0} B:${p.balls || 0} 4s:${p.fours || 0} 6s:${p.sixes || 0} SR:${((p.runs || 0) / (p.balls || 1) * 100).toFixed(2)}`);
+
+  // Bowlers
+  const bowlerStats = players.filter(p => p.team_id === match.bowling_team_id)
+    .map(p => `${p.name} \n O:${p.overs || 0} R:${p.runs_conceded || 0} W:${p.wickets || 0} Econ:${((p.runs_conceded || 0)/(p.overs || 1)).toFixed(2)}`);
+
+  console.log("\nBatters:");
+  batterStats.forEach(line => console.log(line));
+  console.log("\nBowlers:");
+  bowlerStats.forEach(line => console.log(line));
+}
+
+updateUI();
+</script>
+
+</body>
+</html>

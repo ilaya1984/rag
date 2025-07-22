@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Step 1 - Match Info</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, select { width: 100%; margin-bottom: 12px; padding: 8px; }
+    button { padding: 10px; width: 100%; background: #007BFF; color: #fff; border: none; border-radius: 4px; }
+    label { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Step 1 - Match Information</h2>
+
+    <label>Team 1 Name</label>
+    <input type="text" id="team1" placeholder="Team 1 Name" />
+
+    <label>Team 2 Name</label>
+    <input type="text" id="team2" placeholder="Team 2 Name" />
+
+    <label>Match Type</label>
+    <select id="matchType">
+      <option value="Limited Overs">Limited Overs</option>
+      <option value="Turf Cricket">Turf Cricket</option>
+      <option value="Test Match">Test Match</option>
+      <option value="50 Overs">50 Overs</option>
+    </select>
+
+    <label>Total Overs</label>
+    <input type="number" id="totalOvers" placeholder="e.g., 20" oninput="calculateOversPerPlayer()" />
+
+    <label>Overs Per Player</label>
+    <input type="number" id="oversPerPlayer" readonly />
+
+    <label>City</label>
+    <input type="text" id="city" placeholder="City name" />
+
+    <label>Ground</label>
+    <input type="text" id="ground" placeholder="Ground name" />
+
+    <label>Date & Time</label>
+    <input type="datetime-local" id="dateTime" />
+
+    <label>Ball Type</label>
+    <select id="ballType">
+      <option value="Leather">Leather</option>
+      <option value="Tennies">Tennies</option>
+      <option value="Rubber">Rubber</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label>Pitch Type</label>
+    <select id="pitchType">
+      <option value="Matting">Matting</option>
+      <option value="Cement">Cement</option>
+      <option value="Rough">Rough</option>
+      <option value="Turf">Turf</option>
+      <option value="Astroturf">Astroturf</option>
+    </select>
+
+    <button onclick="saveMatchInfo()">Next</button>
+  </div>
+
+  <script>
+    function calculateOversPerPlayer() {
+      const total = parseInt(document.getElementById("totalOvers").value);
+      if (!isNaN(total)) {
+        document.getElementById("oversPerPlayer").value = Math.ceil(total / 5);
+      } else {
+        document.getElementById("oversPerPlayer").value = "";
+      }
+    }
+
+    function saveMatchInfo() {
+      const team1 = document.getElementById("team1").value.trim();
+      const team2 = document.getElementById("team2").value.trim();
+      const matchType = document.getElementById("matchType").value;
+      const totalOvers = parseInt(document.getElementById("totalOvers").value);
+      const oversPerPlayer = parseInt(document.getElementById("oversPerPlayer").value);
+      const city = document.getElementById("city").value.trim();
+      const ground = document.getElementById("ground").value.trim();
+      const dateTime = document.getElementById("dateTime").value;
+      const ballType = document.getElementById("ballType").value;
+      const pitchType = document.getElementById("pitchType").value;
+
+      if (!team1 || !team2 || isNaN(totalOvers) || !city || !ground || !dateTime) {
+        alert("Please fill all required fields.");
+        return;
+      }
+
+      const matchData = {
+        team1,
+        team2,
+        matchType,
+        totalOvers,
+        oversPerPlayer,
+        city,
+        ground,
+        dateTime,
+        ballType,
+        pitchType
+      };
+
+      localStorage.setItem("matchData", JSON.stringify(matchData));
+      window.location.href = "step2.html";
+    }
+  </script>
+</body>
+</html>

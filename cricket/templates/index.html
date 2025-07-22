@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cricket Score App</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f0f0; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
+    h2 { text-align: center; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, select, button { width: 100%; padding: 8px; margin-bottom: 10px; }
+    .flex { display: flex; gap: 10px; }
+    .half { flex: 1; }
+    #lastOverBalls { background: #e9e9e9; padding: 10px; border-radius: 4px; }
+    #changePanel { background: #e0f7ff; padding: 10px; border-radius: 4px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Cricket Score App</h2>
+
+    <!-- Steps 1-4 unchanged -->
+    <div id="step1" class="step active"> ... </div>
+    <div id="step2" class="step"> ... </div>
+    <div id="step3" class="step"> ... </div>
+    <div id="step4" class="step"> ... </div>
+
+    <!-- Step 5: Scoring Panel -->
+    <div id="step5" class="step">
+      <h3>Step 5: Scoring</h3>
+      <div class="scoreboard">
+        <p><strong>Score:</strong> <span id="score">0/0</span></p>
+        <p><strong>Overs:</strong> <span id="overs">0.0</span></p>
+        <p><strong>Striker:</strong> <span id="striker">-</span></p>
+        <p><strong>Non-Striker:</strong> <span id="nonStriker">-</span></p>
+        <p><strong>Bowler:</strong> <span id="bowler">-</span></p>
+      </div>
+      <div class="score-form">
+        <div class="form-group"><label>Runs</label><select id="runs"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option></select></div>
+        <div class="form-group"><label>Extra</label><select id="extra"><option value="none">None</option><option value="wide">Wide</option><option value="noBall">No Ball</option><option value="bye">Bye</option><option value="legBye">Leg Bye</option></select></div>
+        <div class="form-group"><label>Wicket</label><select id="wicket"><option value="none">No</option><option>bowled</option><option>caught</option><option>runout</option><option>lbw</option></select></div>
+        <button onclick="addScore()">Add Score</button>
+      </div>
+      <div class="last-over"><h4>Last Over</h4><p id="lastOverBalls">-</p></div>
+
+      <!-- Change Panel for new batters/bowlers -->
+      <div id="changePanel" class="hidden">
+        <h4>Change Players</h4>
+        <div class="form-group"><label>New Striker</label><select id="newStriker"></select></div>
+        <div class="form-group"><label>Next Bowler</label><select id="newBowler"></select></div>
+        <button onclick="confirmChange()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let match = {}, totalRuns=0, totalWickets=0, balls=0, lastOver=[];
+
+    function gotoStep(n) { /* unchanged steps 1-4 */ }
+    function initPlayers() { /* unchanged */ }
+    function initToss() { /* unchanged */ }
+    function initOpening() { /* unchanged */ }
+    function startScoring() { /* unchanged */ updateScoreboard(); }
+
+    function updateScoreboard() {
+      document.getElementById('score').innerText = `${totalRuns}/${totalWickets}`;
+      document.getElementById('overs').innerText = `${Math.floor(balls/6)}.${balls%6}`;
+      document.getElementById('striker').innerText = document.getElementById('strikerSelect').value;
+      document.getElementById('nonStriker').innerText = document.getElementById('nonStrikerSelect').value;
+      document.getElementById('bowler').innerText = document.getElementById('bowlerSelect').value;
+      document.getElementById('lastOverBalls').innerText = lastOver.join(' ');
+    }
+
+    function addScore() {
+      const runs=parseInt(document.getElementById('runs').value);
+      const extra=document.getElementById('extra').value;
+      const wicket=document.getElementById('wicket').value;
+      let legal=true, entry='';
+      if(extra==='none') { balls++; entry=`${runs}`; }
+      else if(extra==='wide'||extra==='noBall'){ legal=false; entry=(extra==='wide'?'WD':'NB')+'+'+runs; }
+      else { balls++; entry=(extra==='bye'?'B':'LB')+'+'+runs; }
+
+      totalRuns+=runs;
+      if(runs%2&&extra!=='none'){ let s=document.getElementById('strikerSelect'), ns=document.getElementById('nonStrikerSelect'); [s.value,ns.value]=[ns.value,s.value]; }
+
+      if(wicket!=='none'){ totalWickets++; entry='W+0'; populateChange(['striker']); return; }
+
+      lastOver.push(entry);
+      if(legal&&balls%6===0){ let s=document.getElementById('strikerSelect'), ns=document.getElementById('nonStrikerSelect'); [s.value,ns.value]=[ns.value,s.value]; populateChange(['bowler']); return; }
+      updateScoreboard();
+    }
+
+    function populateChange(type){
+      const panel=document.getElementById('changePanel'); panel.classList.remove('hidden');
+      if(type.includes('striker')){
+        const selBat=document.getElementById(match.battingTeam===match.teamA?'playersA':'playersB');
+        const newS=document.getElementById('newStriker'); newS.innerHTML='';
+        Array.from(selBat.options).forEach(o=> newS.add(new Option(o.text)));
+      }
+      if(type.includes('bowler')){
+        const last=document.getElementById('bowlerSelect').value;
+        const selBowl=document.getElementById(match.bowlingTeam===match.teamA?'playersA':'playersB');
+        const newB=document.getElementById('newBowler'); newB.innerHTML='';
+        Array.from(selBowl.options).filter(o=>o.text!==last).forEach(o=> newB.add(new Option(o.text)));
+      }
+    }
+
+    function confirmChange(){
+      const newS=document.getElementById('newStriker'); if(newS.value) document.getElementById('strikerSelect').value=newS.value;
+      const newB=document.getElementById('newBowler'); if(newB.value) document.getElementById('bowlerSelect').value=newB.value;
+      document.getElementById('changePanel').classList.add('hidden');
+      updateScoreboard();
+    }
+  </script>
+</body>
+</html>

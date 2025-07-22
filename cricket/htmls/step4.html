@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Step 4 - Opening Pair & Bowler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 25px;
+    }
+    button:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Step 4 - Opening Pair & Bowler</h2>
+
+    <label for="striker">Striker (Batting Team)</label>
+    <select id="striker"></select>
+
+    <label for="nonStriker">Non-Striker (Batting Team)</label>
+    <select id="nonStriker"></select>
+
+    <label for="bowler">Opening Bowler (Bowling Team)</label>
+    <select id="bowler"></select>
+
+    <button onclick="saveSelections()">Start Match</button>
+  </div>
+
+ <script>
+  const matchData = JSON.parse(localStorage.getItem("matchData"));
+  const strikerSelect = document.getElementById("striker");
+  const nonStrikerSelect = document.getElementById("nonStriker");
+  const bowlerSelect = document.getElementById("bowler");
+
+  function populateOptions(selectElement, players, exclude, currentValue) {
+    selectElement.innerHTML = '<option value="">Select</option>';
+    players.forEach(player => {
+      if (player !== exclude) {
+        const option = document.createElement("option");
+        option.value = player;
+        option.textContent = player;
+        selectElement.appendChild(option);
+      }
+    });
+
+    // Keep previously selected value if still valid
+    if (currentValue && currentValue !== exclude && players.includes(currentValue)) {
+      selectElement.value = currentValue;
+    } else {
+      selectElement.value = ""; // reset if same as excluded
+    }
+  }
+
+  function updateStrikerList() {
+    const nonStrikerVal = nonStrikerSelect.value;
+    const strikerVal = strikerSelect.value;
+    const battingPlayers = matchData[matchData.battingTeam];
+    populateOptions(strikerSelect, battingPlayers, nonStrikerVal, strikerVal);
+  }
+
+  function updateNonStrikerList() {
+    const strikerVal = strikerSelect.value;
+    const nonStrikerVal = nonStrikerSelect.value;
+    const battingPlayers = matchData[matchData.battingTeam];
+    populateOptions(nonStrikerSelect, battingPlayers, strikerVal, nonStrikerVal);
+  }
+
+  function setupSelections() {
+    if (!matchData || !matchData.battingTeam || !matchData.bowlingTeam) {
+      alert("Match data is incomplete. Please go back to Step 3.");
+      window.location.href = "step3.html";
+      return;
+    }
+
+    const battingPlayers = matchData[matchData.battingTeam];
+    const bowlingPlayers = matchData[matchData.bowlingTeam];
+
+    populateOptions(strikerSelect, battingPlayers, nonStrikerSelect.value, "");
+    populateOptions(nonStrikerSelect, battingPlayers, strikerSelect.value, "");
+    populateOptions(bowlerSelect, bowlingPlayers, "", "");
+
+    strikerSelect.addEventListener("change", updateNonStrikerList);
+    nonStrikerSelect.addEventListener("change", updateStrikerList);
+  }
+
+  function saveSelections() {
+    const striker = strikerSelect.value;
+    const nonStriker = nonStrikerSelect.value;
+    const bowler = bowlerSelect.value;
+
+    if (!striker || !nonStriker || !bowler) {
+      alert("Please select both batters and a bowler.");
+      return;
+    }
+
+    if (striker === nonStriker) {
+      alert("Striker and Non-Striker must be different.");
+      return;
+    }
+
+    matchData.openingPair = { striker, nonStriker };
+    matchData.currentBowler = bowler;
+    matchData.currentOver = 0;
+    matchData.currentBall = 0;
+    matchData.score = 0;
+    matchData.wickets = 0;
+    matchData.overs = [];
+    matchData.balls = [];
+
+    localStorage.setItem("matchData", JSON.stringify(matchData));
+    window.location.href = "step5.html";
+  }
+
+  setupSelections();
+</script>
+
+
+</body>
+</html>

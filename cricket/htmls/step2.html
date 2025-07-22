@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 2 - Select Players</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f7f7f7; }
+    .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h2, h3 { text-align: center; }
+    .teams { display: flex; justify-content: space-between; gap: 20px; }
+    .team { flex: 1; }
+    ul { list-style: none; padding: 0; }
+    li { margin-bottom: 8px; }
+    button { margin-top: 15px; padding: 10px; width: 100%; background-color: #007BFF; color: white; border: none; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Step 2 - Select Players</h2>
+    <div class="teams">
+      <div class="team">
+        <h3 id="team1Name">Team 1</h3>
+        <ul id="team1Players"></ul>
+      </div>
+      <div class="team">
+        <h3 id="team2Name">Team 2</h3>
+        <ul id="team2Players"></ul>
+      </div>
+    </div>
+    <button onclick="savePlayers()">Next</button>
+  </div>
+
+  <script>
+    const matchData = JSON.parse(localStorage.getItem("matchData"));
+
+    function generatePlayers(teamName) {
+      return Array.from({length: 15}, (_, i) => `${teamName} Player ${i + 1}`);
+    }
+
+    function populatePlayers() {
+      const team1Name = matchData.team1;
+      const team2Name = matchData.team2;
+
+      document.getElementById("team1Name").textContent = team1Name;
+      document.getElementById("team2Name").textContent = team2Name;
+
+      const team1List = document.getElementById("team1Players");
+      const team2List = document.getElementById("team2Players");
+
+      generatePlayers(team1Name).forEach(player => {
+        const li = document.createElement("li");
+        li.innerHTML = `<label><input type="checkbox" value="${player}"> ${player}</label>`;
+        team1List.appendChild(li);
+      });
+
+      generatePlayers(team2Name).forEach(player => {
+        const li = document.createElement("li");
+        li.innerHTML = `<label><input type="checkbox" value="${player}"> ${player}</label>`;
+        team2List.appendChild(li);
+      });
+    }
+
+    function savePlayers() {
+      const team1Checked = [...document.querySelectorAll("#team1Players input:checked")].map(cb => cb.value);
+      const team2Checked = [...document.querySelectorAll("#team2Players input:checked")].map(cb => cb.value);
+
+      if (team1Checked.length !== 11 || team2Checked.length !== 11) {
+        return alert("Please select exactly 11 players for each team.");
+      }
+
+      matchData[matchData.team1] = team1Checked;
+      matchData[matchData.team2] = team2Checked;
+
+      localStorage.setItem("matchData", JSON.stringify(matchData));
+      window.location.href = "step3.html";
+    }
+
+    populatePlayers();
+  </script>
+</body>
+</html>

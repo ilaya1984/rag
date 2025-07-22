@@ -9,7 +9,30 @@ app = Flask(__name__)
 app.secret_key = "your_secret_key"
 UPLOAD_FOLDER = "uploaded_docs"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+AGENTS_DIR = "agents"
 
+def resolve_active_agent(request, session,id) -> str | None:
+    
+    # 1. Check query string (?id=...)
+    agent_id = request.args.get("id")
+    if agent_id:
+        session["active_agent"] = agent_id
+        return agent_id
+
+    # 2. Check existing session
+    agent_id = session.get("active_agent")
+    if agent_id:
+        return agent_id
+
+    # 3. Default to first available agent from agents directory
+    try:
+        
+        session["active_agent"] = id
+        return agent_id
+    except Exception as e:
+        print("Failed to resolve fallback agent:", e)
+        return None
+    
 @app.route("/")
 def index():
     session.setdefault("chat_history", [])
@@ -18,25 +41,30 @@ def index():
     agents = []
     agent_images = {}
     suggestions_dict = {}
-
+    angent_id=None
+    agent_names={}
     for filename in os.listdir("agents"):
         if filename.endswith(".json"):
             with open(os.path.join("agents", filename), "r", encoding="utf-8") as f:
                 agent_data = json.load(f)
                 agents.append(agent_data["id"])
+               
+                if angent_id==None:angent_id=agent_data["id"]
                 agent_images[agent_data["id"]] = agent_data.get("image", "default_agent.png")
+                agent_names[agent_data["id"]] = agent_data["name"]
                 suggestions_dict[agent_data["id"]] = agent_data.get("suggested_questions", [])
 
-    active_agent = session.get("active_agent")
+    active_agent = resolve_active_agent(request, session,angent_id)
+    
     suggestions = suggestions_dict.get(active_agent, [])
-
+    # print("aid",angent_id,active_agent,suggestions)
     return render_template(
         "chat.html",
         chat_history=session["chat_history"],
         agents=agents,
         agent_images=agent_images,
         active_agent=active_agent,
-        suggestions=suggestions
+        suggestions=suggestions,agent_names=agent_names
     )
 
 @app.route("/switch", methods=["POST"])

@@ -1,0 +1,521 @@
+teams=
+    [{
+"id":3,"name"="IND"
+    },
+{
+"id":4,"name"="PAK"
+    }
+    ]
+
+
+players=[
+    {
+        "id": 1,
+        "name": "IND Player 1",
+        "team_id": 3,
+        "match_id": 1,
+        "runs_conceded": 0,
+        "balls_bowled": 5,
+        "overs": 0.5,
+        "wickets": 0
+    },
+    {
+        "id": 2,
+        "name": "IND Player 2",
+        "team_id": 3,
+        "match_id": 1,
+        "runs_conceded": 5,
+        "balls_bowled": 11,
+        "overs": 1.5,
+        "wickets": 0
+    },
+    {
+        "id": 3,
+        "name": "IND Player 3",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 4,
+        "name": "IND Player 4",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 5,
+        "name": "IND Player 5",
+        "team_id": 3,
+        "match_id": 1,
+        "runs_conceded": 5,
+        "balls_bowled": 6,
+        "overs": 1,
+        "wickets": 0
+    },
+    {
+        "id": 6,
+        "name": "IND Player 6",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 7,
+        "name": "IND Player 9",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 8,
+        "name": "IND Player 10",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 9,
+        "name": "IND Player 11",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 10,
+        "name": "IND Player 12",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 11,
+        "name": "IND Player 13",
+        "team_id": 3,
+        "match_id": 1
+    },
+    {
+        "id": 12,
+        "name": "PAK Player 1",
+        "team_id": 4,
+        "match_id": 1,
+        "runs": 0,
+        "balls": 5,
+        "fours": 0,
+        "sixes": 0
+    },
+    {
+        "id": 13,
+        "name": "PAK Player 2",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 14,
+        "name": "PAK Player 3",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 15,
+        "name": "PAK Player 4",
+        "team_id": 4,
+        "match_id": 1,
+        "runs": 0,
+        "balls": 6,
+        "fours": 0,
+        "sixes": 0
+    },
+    {
+        "id": 16,
+        "name": "PAK Player 5",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 17,
+        "name": "PAK Player 6",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 18,
+        "name": "PAK Player 7",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 19,
+        "name": "PAK Player 8",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 20,
+        "name": "PAK Player 9",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 21,
+        "name": "PAK Player 12",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 22,
+        "name": "PAK Player 13",
+        "team_id": 4,
+        "match_id": 1
+    },
+    {
+        "id": 23,
+        "name": "IND Player 1",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 24,
+        "name": "IND Player 2",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 25,
+        "name": "IND Player 3",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 26,
+        "name": "IND Player 4",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 27,
+        "name": "IND Player 5",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 28,
+        "name": "IND Player 6",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 29,
+        "name": "IND Player 7",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 30,
+        "name": "IND Player 8",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 31,
+        "name": "IND Player 9",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 32,
+        "name": "IND Player 10",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 33,
+        "name": "IND Player 11",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 34,
+        "name": "PAK Player 1",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 35,
+        "name": "PAK Player 2",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 36,
+        "name": "PAK Player 3",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 37,
+        "name": "PAK Player 4",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 38,
+        "name": "PAK Player 5",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 39,
+        "name": "PAK Player 6",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 40,
+        "name": "PAK Player 7",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 41,
+        "name": "PAK Player 8",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 42,
+        "name": "PAK Player 9",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 43,
+        "name": "PAK Player 10",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 44,
+        "name": "PAK Player 11",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 45,
+        "name": "IND Player 1",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 46,
+        "name": "IND Player 2",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 47,
+        "name": "IND Player 3",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 48,
+        "name": "IND Player 4",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 49,
+        "name": "IND Player 5",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 50,
+        "name": "IND Player 6",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 51,
+        "name": "IND Player 7",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 52,
+        "name": "IND Player 8",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 53,
+        "name": "IND Player 9",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 54,
+        "name": "IND Player 10",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 55,
+        "name": "IND Player 11",
+        "team_id": 3,
+        "match_id": 2
+    },
+    {
+        "id": 56,
+        "name": "PAK Player 1",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 57,
+        "name": "PAK Player 2",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 58,
+        "name": "PAK Player 3",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 59,
+        "name": "PAK Player 4",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 60,
+        "name": "PAK Player 5",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 61,
+        "name": "PAK Player 6",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 62,
+        "name": "PAK Player 7",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 63,
+        "name": "PAK Player 8",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 64,
+        "name": "PAK Player 9",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 65,
+        "name": "PAK Player 10",
+        "team_id": 4,
+        "match_id": 2
+    },
+    {
+        "id": 66,
+        "name": "PAK Player 11",
+        "team_id": 4,
+        "match_id": 2
+    }
+]
+
+matche_data={
+    "id": 2,
+    "team1_id": 3,
+    "team2_id": 4,
+    "match_type": "T20",
+    "total_overs": 3,
+    "overs_per_player": 1,
+    "city": "madu",
+    "ground": "valar",
+    "date_time": "2025-07-14T22:15",
+    "ball_type": "leather",
+    "pitch_type": "grass",
+    "toss_winner_id": 3,
+    "toss_decision": "bat",
+    "batting_team_id": 3,
+    "bowling_team_id": 4,
+    "score": 0,
+    "wickets": 0,
+    "current_over": 0,
+    "current_ball": 0,
+    "inning": 1,
+    "striker_id": 23,
+    "non_striker_id": 27,
+    "current_bowler_id": 35
+}
+
+match_score={
+	"inning_1":overs:
+	[
+       {
+        "over":1,
+        "ball":1,
+        "bowler_id":2,
+        "stricker_id":3,
+        "non_stricker_id":3,
+        "extra":{} // wd, no ball , leg bye ,byes  if wide,leg be ,byes runs not added in batsman score but if no ball and bat invloced then add on badsman score
+        "wicket":"no",
+        "wicket_type":{"type":"catch","catch_by":player_id , "brilient_catch":"yes"}, // wicket type is run out , run out by player id and direct 
+
+
+       }
+	],
+	"inning_2":overs:
+	[
+       {}
+	]
+}
+
+matchData = {
+    "team1": "IND",
+    "team2": "PAK",
+    "matchType": "Limited Overs",
+    "totalOvers": 30,
+    "oversPerPlayer": 6,
+    "city": "madu",
+    "ground": "valar",
+    "dateTime": "2025-07-04T08:35",
+    "ballType": "Leather",
+    "pitchType": "Matting",
+    "toss": {
+        "winner": "IND",
+        "decision": "bat"
+    },
+    "battingTeam": "IND",
+    "bowlingTeam": "PAK",
+    "openingPair": {
+        "striker": 4,
+        "nonStriker": 5
+    },
+    "currentBowler": 3,
+    "currentOver": 0,
+    "currentBall": 1,
+    "score": 11,
+    "wickets": 0,
+    "overs": [],    
+    ],
+    "players": {
+        "IND Player 1": {
+            "runs": 0,
+            "balls": 16,
+            "fours": 0,
+            "sixes": 0
+        }
+    },
+    "bowlers": {
+        "PAK Player 3": {
+            "balls": 16,
+            "runs": 11,
+            "wickets": 0
+        }
+    }
+}

@@ -1,0 +1,78 @@
+implement full scorecard ,use html and javascript with good style , 
+
+1 use add score button add score for each ball
+2 6 valid ball for each over ,after over done , show model to select new bowler
+3 wide , no ball , leg bye , bye - 1 run for team , not add to player but if no ball and bat hit then add score to player and 1 run for team
+4 change stricker for each odd runs and over end 
+5 if wicket then show model to choose next batsman
+6 show batting team , runs overs  vs bowling team , curent run rate , projected score if first innings
+7 show innings details as first innings or second innings , if second innings , current run rate , require run rate
+8 show last 6 balls runs
+
+
+use following json format structure to update each balls in overs data and update ui
+
+const teams={"team1":{"id":3,"name":"IND"} ,"team2":{"id":4,"name":"PAK"}}
+
+const Players = [
+  { id: 1, name: "IND Player 1", team_id: 3 ,"match_id": 2,"bowling":{"balls":0,"runs":0,"4s":0,"6s":0,"economy":0,"maiden":0,"wickets":0,"wide":0,"noball":0},"bating":"balls":0,"runs":0,"4s":0,"6s":0,"sr":0},
+  { id: 2, name: "IND Player 2", team_id: 3 ,"match_id": 2},
+  { id: 3, name: "IND Player 3", team_id: 3 ,"match_id": 2},
+  { id: 10, name: "IND Player 12", team_id: 3 ,"match_id": 2},
+  { id: 11, name: "IND Player 13", team_id: 3 ,"match_id": 2},
+  { id: 12, name: "PAK Player 1", team_id: 4 ,"match_id": 2},
+  { id: 13, name: "PAK Player 2", team_id: 4 ,"match_id": 2},
+  { id: 14, name: "PAK Player 3", team_id: 4 ,"match_id": 2},
+  { id: 15, name: "PAK Player 4", team_id: 4 ,"match_id": 2},
+];
+
+const matchData = {
+    "match_id":"2"
+    "team1": "3",
+    "team2": "4",
+    "matchType": "Limited Overs",
+    "totalOvers": 10,
+    "oversPerPlayer": 2,
+    "city": "madu",
+    "ground": "valar",
+    "dateTime": "2025-07-04T08:35",
+    "ballType": "Leather",
+    "pitchType": "Matting",
+    "toss": {
+        "winner": "3",
+        "decision": "bat"
+    },
+    "battingTeam": "3",
+    "bowlingTeam": "4",
+    "openingPair": {
+        "striker": 4,
+        "nonStriker": 5
+    },
+    "currentBowler": 3,
+    "currentOver": 0,
+    "currentBall": 1,
+    "score": 11,
+    "wickets": 0,
+    "overs": {
+        "inning_1":overs:
+        [
+           {
+            "over":1,
+            "ball":1,
+            "bowler_id":2,
+            "stricker_id":3,
+            "non_stricker_id":3,
+            "extra":{} // wd, no ball , leg bye ,byes  if wide,leg be ,byes runs not added in batsman score but if no ball and bat invloced then add on badsman score
+            "wicket":"no",
+            "wicket_type":{"type":"catch","catch_by":player_id , "brilient_catch":"yes"}, // wicket type is run out , run out by player id and direct 
+
+
+           }
+        ],
+        "inning_2":overs:
+        [
+           {}
+        ]
+}
+  
+}
