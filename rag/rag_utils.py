@@ -9,6 +9,15 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 import markdown
 from flask import session
 
+# ✅ LangChain Tools & Agents
+from langchain.tools import Tool
+from langchain.agents import initialize_agent, AgentType
+from langchain.agents.agent_toolkits import create_retriever_tool
+from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_core.language_models.chat_models import SimpleChatModel
+from langchain_core.messages import AIMessage, HumanMessage
+
+
 def extract_suggested_questions_from_answer(answer: str, max_questions: int = 5) -> list[str]:
     messages = [
         {
@@ -270,3 +279,53 @@ def ask_question(agent_id: str, query: str) -> dict:
 
     return html_answer
 
+def load_retriever_tool(agent_id: str) -> Tool | None:
+    try:
+        vectorstore = FAISS.load_local("index", embedder, index_name=agent_id, allow_dangerous_deserialization=True)
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+        return create_retriever_tool(
+            retriever,
+            name="document_qa",
+            description=f"Use this to answer document-based questions for agent {agent_id}."
+        )
+    except Exception as e:
+        print(f"[TOOL ERROR] Retriever tool load failed for {agent_id}: {e}")
+        return None
+
+class TogetherChat(SimpleChatModel):
+    def _call(self, messages, stop=None):
+        hf_messages = [{"role": m.type, "content": m.content} for m in messages]
+        try:
+            response = client.chat_completion(messages=hf_messages, max_tokens=512, temperature=0.7)
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"[Together AI Error] {e}"
+
+def run_agent_with_tools(agent_id: str, query: str) -> str:
+    try:
+        vectorstore = FAISS.load_local("index", embedder, index_name=agent_id, allow_dangerous_deserialization=True)
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+        retriever_tool = create_retriever_tool(
+            retriever,
+            name="document_qa",
+            description=f"Use this to answer document-based questions for agent {agent_id}."
+        )
+
+        tools = [
+            retriever_tool,
+            DuckDuckGoSearchRun(name="Search")
+        ]
+
+        llm = TogetherChat()
+        agent = initialize_agent(
+            tools=tools,
+            llm=llm,
+            agent=AgentType.OPENAI_FUNCTIONS,
+            verbose=True
+        )
+
+        return agent.run(query)
+
+    except Exception as e:
+        print("[AGENT ERROR]:", e)
+        return f"<span style='color:red;'>Agent failed: {e}</span>"

@@ -3,6 +3,7 @@ import os
 from rag_utils import ingest_and_embed, ask_question,extract_suggested_questions_from_answer
 from werkzeug.utils import secure_filename
 import json
+from rag_utils import run_agent_with_tools
 
 
 app = Flask(__name__)
@@ -169,6 +170,31 @@ def ask():
         "suggestions": suggestions
     })
 
+@app.route("/agent_chat_ui")
+def agent_chat_ui():
+    return render_template("agent_chat.html")
+
+@app.route("/agent_chat", methods=["POST"])
+def agent_chat():
+    if request.is_json:
+        data = request.get_json()
+        query = data.get("query", "")
+    else:
+        query = request.form.get("query", "")
+
+    active_agent = session.get("active_agent")
+    if not active_agent:
+        return jsonify({"answer": "❌ No active agent selected."})
+
+    answer = run_agent_with_tools(active_agent, query)
+
+    session.setdefault("chat_history", [])
+    session["chat_history"].append({"question": query, "answer": answer})
+    session.modified = True
+
+    return jsonify({
+        "answer": answer
+    })
 
 
 if __name__ == "__main__":

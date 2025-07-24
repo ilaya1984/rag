@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Socket.IO Chat</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #chatBox { width: 100%; height: 300px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+    .system { color: #999; font-style: italic; }
+    .emoji { font-size: 1.4em; }
+    .me { color: green; }
+    .them { color: blue; }
+    .history { color: #666; font-size: 0.9em; }
+    input, button { padding: 8px; margin-top: 5px; }
+    #messageInput { width: 60%; }
+    .timestamp { color: #999; font-size: 0.8em; }
+    .message-container { position: relative; margin-bottom: 5px; }
+    .delete-btn { 
+      position: absolute; 
+      right: 5px; 
+      top: 50%; 
+      transform: translateY(-50%);
+      background: #ff4444; 
+      color: white; 
+      border: none; 
+      border-radius: 3px; 
+      padding: 2px 6px; 
+      font-size: 10px; 
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .message-container:hover .delete-btn {
+      opacity: 1;
+    }
+    .deleted-message { 
+      color: #999; 
+      font-style: italic; 
+      text-decoration: line-through; 
+    }
+  </style>
+</head>
+<body>
+
+  <h2>In APP Chat</h2>
+
+  <label>JWT Token: <input type="text" id="token" /></label><br/>
+  <!-- <label>Your Account ID: <input type="text" id="yourId" /></label><br/> -->
+  <label>Receiver ID: <input type="text" id="recipientId" /></label><br/>
+  <!-- <label>Booking ID: <input type="text" id="bookingId" /></label><br/> -->
+  <button onclick="connect()">Connect</button>
+
+  <div id="chatUI" style="display:none;">
+    <div id="chatBox"></div>
+    <div id="typingIndicator" class="system" style="height: 20px; margin-top: 5px;"></div>
+
+    <input type="text" id="messageInput" placeholder="Type a message..."  />
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="sendEmoji('😊')">😊</button>
+    <button onclick="sendEmoji('😂')">😂</button>
+    <button onclick="sendEmoji('👍')">👍</button>
+  </div>
+
+  <script>
+    let socket = null;
+    let yourId = "";
+    let typingTimer = null;
+    let typingTimeout;
+
+const admin_id = "33e4c8d2-6021-70c1-d9d8-949465f7b7d0";
+    // function showTyping(msg) {
+    //   const typingEl = document.getElementById("typingIndicator");
+    //   typingEl.innerText = msg;
+
+    //   clearTimeout(typingTimer);
+    //   typingTimer = setTimeout(() => {
+    //     typingEl.innerText = "";
+    //   }, 2000); // Clear after 2 seconds
+    // }
+
+    function connect() {
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get("userId");
+      const user_role = params.get("user_role");
+      const token = document.getElementById("token").value.trim();
+      const admin_id = "33e4c8d2-6021-70c1-d9d8-949465f7b7d0";
+      user_name=""
+      //yourId = document.getElementById("yourId").value.trim();
+      const recipientId = document.getElementById("recipientId").value.trim();
+      // const bookingId = document.getElementById("bookingId").value.trim();
+
+      // if (!token || !recipientId) {
+      //   alert("Please fill in all fields.");
+      //   return;
+      // }
+      //socket.io
+      socket = io("http://localhost:8046/", {
+        transports: ["websocket"],
+         path: "/socket.io",
+         auth: {
+             userId: userId,
+             user_role: user_role,
+             admin_id:admin_id
+          }
+      });
+
+      socket.on("connect", () => {
+        logSystem("Connected to server ✅");
+
+
+      
+      });
+      
+        socket.on("typing", ({ user_role }) => {
+    if (user_role === "admin") {
+      const typingEl = document.getElementById("typingIndicator");
+      if (typingEl) typingEl.textContent = `Admin is typing...`;
+    }
+  });
+
+
+document.getElementById("messageInput").addEventListener("input", () => {
+  socket.emit("typing", { to_user_id: adminId, from_user_id: userId, user_role: "user" });
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit("stop_typing", { to_user_id: adminId, from_user_id: userId });
+  }, 1000);
+});
+
+
+  socket.on("stop_typing", () => {
+    const typingEl = document.getElementById("typingIndicator");
+    if (typingEl) typingEl.textContent = "";
+  });
+      
+      socket.on("connect_error", (err) => {
+  console.error(" Connection error:", err.message);
+});
+
+
+         socket.on("user_info", (data) => {
+    console.log("👤 Logged in as:", data.name);
+         user_name=data.name
+         socket.emit("join", { 
+          userId: userId,
+          user_role: user_role,
+          admin_id: admin_id,
+          user_name:data.name
+          //booking_id: bookingId
+        });
+  });
+
+      socket.on("joined", (data) => {
+        document.getElementById("chatUI").style.display = "block";
+        // logSystem(`Chat started..`);
+      });
+
+      // Handle chat history loading
+      socket.on("chat_history", (data) => {
+        logSystem(`📚 Loading ${data.messages.length} previous messages...`);
+        console.log("Your ID:", yourId); // Debug log
+        
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            console.log("Message sender_id:", msg.sender_id, "Your ID:", yourId); // Debug log
+            // Ensure both are strings for comparison
+            const isMe = String(msg.sender_id) === String(yourId);
+            console.log("Is me:", isMe); // Debug log
+            
+            const senderName = isMe ? "You" : msg.sender_name;
+            const cssClass = isMe ? "me" : "them";
+            
+            // Add history indicator for old messages
+            const historyClass = "history";
+            const timestamp = msg.created_at ? new Date(msg.created_at).toLocaleTimeString() : "";
+            
+            const chatBox = document.getElementById("chatBox");
+            const messageHtml = createMessageHtml(senderName, msg.message, cssClass, historyClass, timestamp, msg.id, isMe);
+            chatBox.innerHTML += messageHtml;
+          });
+          
+          chatBox.scrollTop = chatBox.scrollHeight;
+          logSystem("✅ Chat history loaded");
+        } else {
+          logSystem("📝 No previous messages found");
+        }
+      });
+
+      // Handle message deletion
+      socket.on("message_deleted", (data) => {
+        console.log("Message deleted:", data);
+        const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+        if (messageElement) {
+          // Remove the message completely from UI
+          messageElement.remove();
+          logSystem("🗑️ This message was deleted");
+        } else {
+          console.log("Message element not found for deletion:", data.message_id);
+        }
+      });
+
+      socket.on("message", (data) => {
+        console.log("Received message:", data); // Debug log
+        
+        if (data.type === "system") {
+          if (data.event === "typing") {
+            if (data.from !== yourId) {
+              showTyping(`${data.from} is typing...`);
+            }
+          } else if (data.event === "success") {
+            logSystem(`✅ ${data.text}`);
+          } else if (data.event === "error") {
+            logSystem(`❌ ${data.text}`);
+          } else {
+            logSystem(`${data.event}: ${data.from}`);
+          }
+        } else if (data.type === "user") {
+          if (data.event === "emoji") {
+            logMessage(`${data.from}`, data.text, true, data.message_id);
+          } else if (data.event === "message") {
+            logMessage(`${data.from}`, data.text, false, data.message_id);
+          } else if (data.event === "message_confirmation") {
+            // Update the temporary message with the real message ID
+            const tempMessage = document.querySelector('[data-message-id^="temp-"]');
+            if (tempMessage && data.message_id) {
+              tempMessage.setAttribute('data-message-id', data.message_id);
+              // Add delete button to the confirmed message
+              const deleteButton = `<button class="delete-btn" onclick="deleteMessage('${data.message_id}')" title="Delete message">×</button>`;
+              tempMessage.innerHTML += deleteButton;
+              console.log("✅ Message confirmed with ID:", data.message_id);
+            }
+          }
+        }
+      });
+
+      socket.on("disconnect", () => {
+        logSystem("Disconnected from server");
+      });
+    }
+
+    function createMessageHtml(senderName, message, cssClass, historyClass, timestamp, messageId, isMe) {
+      console.log("Creating message HTML:", { senderName, messageId, isMe }); // Debug log
+      
+      // Only show delete button if we have a valid message ID and it's our message
+      const deleteButton = (isMe && messageId && messageId !== 'undefined' && messageId !== '') ? 
+        `<button class="delete-btn" onclick="deleteMessage('${messageId}')" title="Delete message">×</button>` : '';
+      
+      const messageHtml = `<div class="message-container ${cssClass} ${historyClass}" data-message-id="${messageId || ''}">
+        <strong>${senderName}:</strong> ${message}
+        <span class="timestamp">${timestamp}</span>
+        ${deleteButton}
+      </div>`;
+      
+      console.log("Generated message HTML:", messageHtml); // Debug log
+      return messageHtml;
+    }
+
+    function deleteMessage(messageId) {
+      console.log("Attempting to delete message:", messageId);
+      
+      // Validate message ID
+      if (!messageId || messageId === 'undefined' || messageId === '') {
+        logSystem("❌ Invalid message ID for deletion");
+        return;
+      }
+      
+      if (confirm("Are you sure you want to delete this message?")) {
+        console.log("Sending delete request for message:", messageId);
+        
+        // Immediately remove the message from UI for better UX
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+          messageElement.remove();
+          // logSystem("🗑️ Message deleted from UI");
+        } else {
+          console.log("Message element not found for immediate removal:", messageId);
+        }
+        
+        socket.emit("delete_message", {
+          message_id: messageId
+        });
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("messageInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Display message immediately for better UX
+      const timestamp = new Date().toLocaleTimeString();
+      const chatBox = document.getElementById("chatBox");
+      const tempMessageHtml = `<div class="message-container me" data-message-id="temp-${Date.now()}">
+        <strong>You:</strong> ${text}
+        <span class="timestamp">${timestamp}</span>
+      </div>`;
+      chatBox.innerHTML += tempMessageHtml;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      socket.emit("message_from_user", {
+        type: "user",
+        event: "message",
+        text: text
+      });
+
+      input.value = "";
+    }
+
+    function sendTyping() {
+      socket.emit("message", {
+        type: "system",
+        event: "typing"
+      });
+    }
+
+   function sendEmoji(emoji) {
+  if (!selectedUserId) return;
+
+  // Display immediately in chat
+  addMessage("You", emoji, selectedUserId);
+
+  // Send emoji to socket
+  socket.emit("message_from_admin", {
+    to_user_id: selectedUserId,
+    text: emoji
+  });
+}
+
+    function logSystem(msg) {
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML += `<div class="system">⚙️ ${msg}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function logMessage(sender, msg, isEmoji, messageId) {
+      const cssClass = sender === "You" ? "me" : "them";
+      const content = isEmoji
+        ? `<span class="emoji">${msg}</span>`
+        : msg;
+      const timestamp = new Date().toLocaleTimeString();
+      const chatBox = document.getElementById("chatBox");
+      
+      const isMe = sender === "You";
+      // Show delete button for messages with valid IDs (from history or real-time)
+      const messageHtml = createMessageHtml(sender, content, cssClass, "", timestamp, messageId, isMe);
+      
+      chatBox.innerHTML += messageHtml;
+      chatBox.scrollTop = chatBox.scrollHeight;
+      
+      // Debug log for message creation
+      console.log(`Message displayed - Sender: ${sender}, MessageID: ${messageId}, IsMe: ${isMe}`);
+    }
+    
+    
+
+  </script>
+
+</body>
+</html>

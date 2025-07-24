@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Chat</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; display: flex; height: 100vh; margin: 0; }
+    #userList { width: 250px; border-right: 1px solid #ccc; overflow-y: auto; padding: 1rem; }
+    #chatPanel { flex: 1; display: flex; flex-direction: column; }
+    #chatBox { flex: 1; overflow-y: auto; padding: 1rem; }
+    #messageInput { display: flex; }
+    #messageInput input { flex: 1; padding: 10px; }
+    #messageInput button { padding: 10px; }
+    .user { border-bottom: 1px solid #eee; cursor: pointer; padding: 5px 0; }
+    .user.active { background: #f0f0f0; font-weight: bold; }
+    .message { margin-bottom: 0.5rem; }
+    .message.system { color: #888; font-style: italic; }
+    .message.you { color: blue; font-weight: bold; }
+    .message.user { color: green; }
+    .last-msg { font-size: 0.85em; color: #666; padding-left: 10px; }
+  </style>
+</head>
+<body>
+  <div id="userList">
+    <h3>Connected Users</h3>
+    <div id="users"></div>
+  </div>
+  <div id="chatPanel">
+    <div id="chatBox"></div>
+    <div id="messageInput">
+      <div id="typingIndicator" style="padding: 0 1rem; font-style: italic; color: #888;"></div>
+      <input type="text" id="msg" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+          <button onclick="sendEmoji('😊')">😊</button>
+    <button onclick="sendEmoji('😂')">😂</button>
+    <button onclick="sendEmoji('👍')">👍</button>
+    </div>
+  </div>
+
+  <script>
+    const admin_id = "33e4c8d2-6021-70c1-d9d8-949465f7b7d0";
+    const socket = io("http://localhost:8046", {
+      auth: { userId: admin_id, user_role: "admin" }
+    });
+
+    const chatHistories = {};
+    const users = {};  // userId -> userName
+    let selectedUserId = null;
+
+    const chatBox = document.getElementById("chatBox");
+    const usersDiv = document.getElementById("users");
+
+
+    socket.on("typing", ({ from_user_id, user_role }) => {
+  if (!from_user_id || from_user_id === admin_id) return;
+  const typingUser = users[from_user_id] || "User";
+  document.getElementById("typingIndicator").textContent = `${typingUser} is typing...`;
+});
+
+socket.on("stop_typing", ({ from_user_id }) => {
+  document.getElementById("typingIndicator").textContent = "";
+});
+
+    function addMessage(sender, text, userId) {
+      if (!userId) return;
+
+      
+
+      // If active user, show in chat box
+      if (userId === selectedUserId) {
+        const div = document.createElement("div");
+        div.className = "message " + (
+          sender === "System" ? "system" :
+          sender === "You" ? "you" : "user"
+        );
+       div.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+      if (sender === "System") return;
+      if (!chatHistories[userId]) chatHistories[userId] = [];
+
+      chatHistories[userId].push({ sender, text });
+      localStorage.setItem("chatHistories", JSON.stringify(chatHistories));
+      // Update last message preview in user list
+      renderUsers();
+    }
+
+    function sendEmoji(emoji) {
+  if (!selectedUserId) return;
+
+  // Display immediately in chat
+  addMessage("You", emoji, selectedUserId);
+
+  // Send emoji to socket
+  socket.emit("message_from_admin", {
+    to_user_id: selectedUserId,
+    text: emoji
+  });
+}
+
+    function renderUsers() {
+      usersDiv.innerHTML = "";
+      Object.entries(users).forEach(([id, name]) => {
+        const userDiv = document.createElement("div");
+        userDiv.className = "user" + (id === selectedUserId ? " active" : "");
+        userDiv.onclick = () => {
+         if (selectedUserId !== id) {
+            selectedUserId = id;
+            localStorage.setItem("selectedUserId", id);
+            renderUsers();
+            renderChat(id);
+            const last = chatHistories[id]?.at(-1);
+    const systemMsg = `Chatting with ${users[id]}`;
+    if (!last || !(last.sender === "System" && last.text === systemMsg)) {
+        addMessage("System", systemMsg, id);
+    }
+  }
+        };
+
+        const nameDiv = document.createElement("div");
+        nameDiv.textContent = name;
+
+        const lastMsg = chatHistories[id]?.at(-1)?.text;
+        const lastDiv = document.createElement("div");
+        lastDiv.className = "last-msg";
+        lastDiv.textContent = lastMsg ? `🗨️ ${lastMsg}` : "";
+
+        userDiv.appendChild(nameDiv);
+        userDiv.appendChild(lastDiv);
+
+        usersDiv.appendChild(userDiv);
+      });
+    }
+
+    function renderChat(userId) {
+      chatBox.innerHTML = "";
+      const history = chatHistories[userId] || [];
+      history.forEach(({ sender, text }) => {
+        const div = document.createElement("div");
+        div.className = "message " + (
+          sender === "System" ? "system" :
+          sender === "You" ? "you" : "user"
+        );
+        div.textContent = `${sender}: ${text}`;
+        chatBox.appendChild(div);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = document.getElementById("msg").value.trim();
+      if (!text || !selectedUserId) return;
+
+      socket.emit("message_from_admin", {
+        to_user_id: selectedUserId,
+        text: text
+      });
+
+      addMessage("You", text, selectedUserId);
+      document.getElementById("msg").value = "";
+    }
+
+    socket.on("connect", () => {
+      console.log("✅ Connected as admin");
+      logSystem("Connected to server ✅");
+      socket.emit("join", {
+        userId: admin_id,
+        user_role: "admin",
+        user_name: "Admin"
+      });
+    });
+
+    function logSystem(msg) {
+      chatBox.innerHTML += `<div class="message system">⚙️ ${msg}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    socket.on("message", (data) => {
+      if (!data.from_user_id || !data.text || data.from_user_id === admin_id) return;
+
+      if (!users[data.from_user_id]) {
+        users[data.from_user_id] = data.from_user_name || "User";
+        localStorage.setItem("chatUsers", JSON.stringify(users));
+      }
+
+      addMessage(users[data.from_user_id] || "User", data.text, data.from_user_id);
+    });
+
+    socket.on("user_joined", ({ userId, userName }) => {
+      users[userId] = userName;
+      localStorage.setItem("chatUsers", JSON.stringify(users));
+      renderUsers();
+      addMessage("System", `${userName} joined`, userId);
+    });
+
+    socket.on("user_disconnected", ({ userId, userName }) => {
+      delete users[userId];
+      localStorage.setItem("chatUsers", JSON.stringify(users));
+      renderUsers();
+      addMessage("System", `${userName} is disconnected`, userId);
+    });
+
+    // Load from localStorage on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      const storedId = localStorage.getItem("selectedUserId");
+      const storedUsers = localStorage.getItem("chatUsers");
+      const storedChats = localStorage.getItem("chatHistories");
+
+      if (storedUsers) {
+        Object.assign(users, JSON.parse(storedUsers));
+      }
+
+      if (storedChats) {
+        Object.assign(chatHistories, JSON.parse(storedChats));
+      }
+
+      if (storedId && users[storedId]) {
+        selectedUserId = storedId;
+      }
+
+      renderUsers();
+      if (selectedUserId) renderChat(selectedUserId);
+    });
+  </script>
+</body>
+</html>

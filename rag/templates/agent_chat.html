@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Agent Tool Chat</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    #chat-box { border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 700px; }
+    .msg { margin: 1rem 0; }
+    .user { font-weight: bold; }
+    .bot { color: #333; }
+  </style>
+</head>
+<body>
+  <h2>🔧 Chat with Tool-Enabled Agent</h2>
+  <form id="agent-form">
+    <input type="text" id="agent-query" placeholder="Ask anything..." style="width: 400px;" required />
+    <button type="submit">Ask</button>
+  </form>
+
+  <div id="chat-box"></div>
+
+  <script>
+    document.getElementById("agent-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const input = document.getElementById("agent-query");
+      const query = input.value;
+      input.value = "";
+
+      const box = document.getElementById("chat-box");
+      box.innerHTML += `<div class="msg user">🧑‍💬 You: ${query}</div>`;
+
+      fetch("/agent_chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      })
+      .then(res => res.json())
+      .then(data => {
+        box.innerHTML += `<div class="msg bot">🤖 Agent: ${data.answer}</div>`;
+        box.scrollTop = box.scrollHeight;
+      });
+    });
+  </script>
+</body>
+</html>

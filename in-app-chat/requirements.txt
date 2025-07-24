@@ -1,0 +1,13 @@
+fastapi==0.115.8
+uvicorn==0.34.0
+SQLAlchemy==2.0.38
+asyncpg==0.30.0
+python-dotenv==1.0.1
+pydantic-settings==2.8.1
+geoalchemy2
+websockets
+python-socketio[asgi]
+psycopg2-binary
+pyjwt
+alembic
+requests
